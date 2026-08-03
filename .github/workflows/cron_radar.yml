@@ -2,7 +2,7 @@ name: YouTube Radar Automation
 
 on:
   schedule:
-    - cron: '0 * * * *' # Läuft einmal vollautomatisch jede Stunde
+    - cron: '0 */3 * * *'
   workflow_dispatch:   # Ermöglicht es dir, das Skript jederzeit manuell zu testen
 
 jobs:

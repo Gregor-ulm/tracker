@@ -1,0 +1,11 @@
+# Lokale Konfigurationsdateien mit API-Keys
+.env
+secret.txt
+
+# Python-Caches
+__pycache__/
+*.pyc
+
+# Optionale lokale Tracking-Ergebnisse (falls du sie nicht hochladen willst)
+# tracking_*.txt
+tracking_alt.py

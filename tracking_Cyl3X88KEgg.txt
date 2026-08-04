@@ -1,0 +1,2 @@
+Zeit_in_h, Aufrufe
+0.0000, 11356

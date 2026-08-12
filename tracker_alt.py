@@ -1,17 +1,16 @@
-import time
 import os
+import sys
+import time
 from datetime import datetime, timedelta, timezone
 from googleapiclient.discovery import build
 
-# ==========================================
-# KONFIGURATION
-# ==========================================
-API_KEY = "AIzaSyDn6o8WZ7cmtUzzGzdZMSyl5pgY8SPN3QM"  # Ersetzen Sie dies mit Ihrem YouTube API Key
+# API-Key sicher aus GitHub Secrets laden
+API_KEY = os.environ.get("YOUTUBE_API_KEY")
+if not API_KEY:
+    print("Fehler: Kein YOUTUBE_API_KEY gefunden!")
+    sys.exit(1)
 
-# WICHTIG FÜR PYTHONANYWHERE FREE PLAN: Proxy aktivieren
-os.environ["https_proxy"] = "http://proxy.server:3128"
-
-# Liste der großen Kanäle (Kanal-ID: Name)
+# Kanäle definieren
 KANAL_LISTE = {
     "UCX6OQ3DkcsbYNE6H8uQQuVA": "MrBeast",
     "UCsXVk37bltHxD1rDPwtNM8Q": "Kurzgesagt",
@@ -23,148 +22,77 @@ KANAL_LISTE = {
     "UCgZpwegd4AdDlZNrIamIgRw": "BastiGHG",
     "UCDmbhGe7-wC1a55l5ZYAZJw": "Papaplatte"
 }
-#Möglich: moistcritical, marcant
-RADAR_INTERVALL = 7200       # Alle 2 Minuten nach neuen Uploads suchen
-MAX_ALTER_MINUTEN = 10      # Ein Video gilt als brandneu, wenn es jünger als X Minuten ist
 
-# API-Client initialisieren
+MAX_ALTER_MINUTEN = 65 # Erhöht auf 65, da GitHub stündlich läuft
 youtube = build('youtube', 'v3', developerKey=API_KEY)
 
-# ==========================================
-# FUNKTIONEN
-# ==========================================
+def hole_status():
+    """Liest den aktuellen Modus (Radar oder Tracking) aus."""
+    if not os.path.exists("status.txt"):
+        return "RADAR", None, None
+    with open("status.txt", "r") as f:
+        zeilen = f.read().splitlines()
+        if len(zeilen) >= 3:
+            return zeilen[0], zeilen[1], float(zeilen[2])
+    return "RADAR", None, None
+
+def schreibe_status(modus, video_id, start_zeit):
+    with open("status.txt", "w") as f:
+        f.write(f"{modus}\n{video_id}\n{start_zeit}")
 
 def scanne_nach_neuem_video():
-    """Scannt die Kanäle und gibt die Video-ID zurück, sobald ein neues gefunden wird."""
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] Scanne Kanäle nach neuen Uploads...")
-
+    print("Scanne Kanäle nach neuen Uploads...")
     for kanal_id, kanal_name in KANAL_LISTE.items():
         try:
-            request = youtube.search().list(
-                channelId=kanal_id,
-                part="snippet",
-                type="video",
-                order="date",
-                maxResults=1
-            )
+            request = youtube.search().list(channelId=kanal_id, part="snippet", type="video", order="date", maxResults=1)
             response = request.execute()
-
             items = response.get('items', [])
-            if not items:
-                continue
+            if not items: continue
 
-            # KORREKTUR: Greife auf das erste Element [0] der Liste zu
             erstes_video = items[0]
             video_id = erstes_video['id']['videoId']
-            titel = erstes_video['snippet']['title']
             pub_zeit_str = erstes_video['snippet']['publishedAt']
 
             pub_zeit = datetime.fromisoformat(pub_zeit_str.replace("Z", "+00:00"))
-            jetzt = datetime.now(timezone.utc)
-            alter = jetzt - pub_zeit
+            alter = datetime.now(timezone.utc) - pub_zeit
 
             if alter < timedelta(minutes=MAX_ALTER_MINUTEN):
-                print(f"\n🔥 NEUES VIDEO GEFUNDEN BEI {kanal_name.upper()}!")
-                print(f"Video-ID: {video_id} | Titel: {titel}")
+                print(f"🔥 NEUES VIDEO GEFUNDEN: {video_id}")
                 return video_id
-
         except Exception as e:
-            print(f"Fehler beim Scannen von {kanal_name}: {e}")
-    print("Noch nichts gefunden")
+            print(f"Fehler bei {kanal_name}: {e}")
     return None
 
-
-
-def hole_aktuelle_aufrufe(video_id):
-    """Fragt die exakte aktuelle Aufrufzahl eines Videos ab."""
+def hole_views(video_id):
     try:
-        request = youtube.videos().list(
-            part="statistics",
-            id=video_id
-        )
+        request = youtube.videos().list(part="statistics", id=video_id)
         response = request.execute()
-        items = response.get('items', [])
-        if items:
-            return int(items['statistics']['viewCount'])
-    except Exception as e:
-        print(f"Fehler bei der View-Abfrage: {e}")
-    return None
+        return int(response['items'][0]['statistics']['viewCount'])
+    except:
+        return None
 
+# Hauptlogik für den stündlichen GitHub-Aufruf
+modus, aktives_video, start_zeit = hole_status()
 
-def bestimme_wartezeit_sekunden(vergangene_stunden):
-    """Berechnet dynamisch das nächste Messintervall basierend auf dem Video-Alter."""
-    if vergangene_stunden <= 2:
-        return 60         # 1 Minute
-    elif vergangene_stunden <= 12:
-        return 300        # 5 Minuten
-    elif vergangene_stunden <= 24:
-        return 900        # 15 Minuten
-    elif vergangene_stunden <= 72:
-        return 1800       # 30 Minuten
-    elif vergangene_stunden <= 720:
-        return 3600       # 60 Minuten (bis zu 30 Tage)
+if modus == "RADAR":
+    video_id = scanne_nach_neuem_video()
+    if video_id:
+        schreibe_status("TRACKING", video_id, time.time())
+        # Erste Messung direkt anlegen
+        views = hole_views(video_id)
+        with open(f"tracking_{video_id}.txt", "w") as f:
+            f.write(f"Zeit_in_h, Aufrufe\n0.0000, {views}\n")
     else:
-        return -1         # Über 30 Tage -> Tracking beenden
+        print("Kein neues Video in der letzten Stunde.")
 
-
-def starte_daten_tracking(video_id):
-    """Wechselt in den Tracking-Modus mit dynamischen Intervallen und LaTeX-Format."""
-    dateiname = f"tracking_{video_id}.txt"
-    start_zeitpunkt = time.time()
-
-    print(f"\n🚀 Starte Tracking-Modus. Daten werden in '{dateiname}' gespeichert.")
-
-    # Datei initialisieren und LaTeX-konforme Spaltenüberschriften schreiben
-    if not os.path.exists(dateiname):
-        with open(dateiname, "w", encoding="utf-8") as f:
-            f.write(f"Daten für Video-ID: {video_id}, Startzeit: {start_zeitpunkt}\n")
-            f.write("Zeit_in_h, Aufrufe\n")
-
-    while True:
-        try:
-            # Berechne vergangene Zeit in Stunden seit Tracking-Start
-            aktuelle_zeit = time.time()
-            vergangene_sekunden = aktuelle_zeit - start_zeitpunkt
-            vergangene_stunden = vergangene_sekunden / 3600.0
-
-            # Dynamisches Intervall bestimmen
-            wartezeit = bestimme_wartezeit_sekunden(vergangene_stunden)
-            if wartezeit == -1:
-                print("\n⏰ 30 Tage erreicht. Tracking automatisch beendet.")
-                break
-
-            views = hole_aktuelle_aufrufe(video_id)
-            if views is not None:
-                # Zeile formatieren (Zeit auf 4 Nachkommastellen gerundet für exakte Minutenwerte)
-                daten_zeile = f"{vergangene_stunden:.4f}, {views}\n"
-
-                with open(dateiname, "a", encoding="utf-8") as f:
-                    f.write(daten_zeile)
-
-                print(f"[{datetime.now().strftime('%H:%M:%S')}] t = {vergangene_stunden:.2f}h | Aufrufe: {views} | Intervall: {wartezeit}s")
-            else:
-                print("Warnung: Aufrufzahlen konnten nicht geladen werden.")
-
-            time.sleep(wartezeit)
-
-        except KeyboardInterrupt:
-            print("\nTracking vom Nutzer abgebrochen.")
-            break
-
-# ==========================================
-# HAUPTPROGRAMM (MAIN)
-# ==========================================
-if __name__ == "__main__":
-    print("=== YouTube Upload-Radar gestartet (PythonAnywhere-Edition) ===")
-
-    gefunden_id = None
-    while not gefunden_id:
-        try:
-            gefunden_id = scanne_nach_neuem_video()
-            if not gefunden_id:
-                time.sleep(RADAR_INTERVALL)
-        except KeyboardInterrupt:
-            print("\nRadar gestoppt.")
-            exit()
-
-    starte_daten_tracking(gefunden_id)
+elif modus == "TRACKING":
+    vergangene_stunden = (time.time() - start_zeit) / 3600.0
+    if vergangene_stunden > 720: # Nach 30 Tagen beenden
+        print("Tracking-Zeitraum abgelaufen.")
+        schreibe_status("RADAR", "", "")
+    else:
+        views = hole_views(aktives_video)
+        if views:
+            with open(f"tracking_{aktives_video}.txt", "a") as f:
+                f.write(f"{vergangene_stunden:.4f}, {views}\n")
+            print(f"Eintrag hinzugefügt: {vergangene_stunden:.2f}h -> {views} Views.")

@@ -32,6 +32,6 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add status.txt tracking_*.txt || true
+          git add status.json status.txt tracking_*.txt || true
           git commit -m "Automatische View-Messung aktualisiert [skip ci]" || echo "Keine Änderungen"
           git push

@@ -2,3 +2,4 @@ Titel: What If Gravity Was 10% Stronger? | Kanal: Kurzgesagt – In a Nutshell |
 Zeit_in_h, Aufrufe
 0.0000, 5449
 4.0032, 111539
+8.8079, 271712

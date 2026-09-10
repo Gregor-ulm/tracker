@@ -2,3 +2,4 @@ Titel: The Mistake That Exposed Osama Bin Laden | Kanal: The Infographics Show |
 Zeit_in_h, Aufrufe
 0.0000, 1397
 2.4199, 11996
+6.8886, 84910

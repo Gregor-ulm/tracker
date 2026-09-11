@@ -2,3 +2,4 @@ Titel: How a Camera Works PART 2 - (Part 1 was 11 years ago) - The Slow Mo Guys 
 Zeit_in_h, Aufrufe
 0.0000, 2735
 4.5848, 84986
+7.0244, 291017

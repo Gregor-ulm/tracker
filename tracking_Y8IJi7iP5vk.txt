@@ -2,3 +2,4 @@ Titel: Last To Fall Wins | Kanal: MrBeast | Link: https://www.youtube.com/watch?
 Zeit_in_h, Aufrufe
 0.0000, 103549
 4.3849, 3309576
+7.0787, 4968031

@@ -2,3 +2,4 @@ Titel: World War 3 - Hour by Hour at 35,000 Feet | Kanal: The Infographics Show 
 Zeit_in_h, Aufrufe
 0.0000, 1291
 3.7249, 51708
+11.8440, 149489

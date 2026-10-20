@@ -2,3 +2,4 @@ Titel: This Is an Ad - But It Saves Our Ass | Kanal: Kurzgesagt – In a Nutshel
 Zeit_in_h, Aufrufe
 0.0000, 10857
 4.8254, 922133
+9.5058, 2054390

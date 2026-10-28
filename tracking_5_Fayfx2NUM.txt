@@ -2,3 +2,4 @@ Titel: How I Survived Late-Stage Cancer (A Fun Story) | Kanal: Kurzgesagt – In
 Zeit_in_h, Aufrufe
 0.0000, 11073
 6.7178, 1506027
+13.2700, 2460136

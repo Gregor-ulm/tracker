@@ -2,3 +2,4 @@ Titel: How Big Is a Shooting Star? | Kanal: Mark Rober | Link: https://www.youtu
 Zeit_in_h, Aufrufe
 0.0000, 56
 7.1906, 301921
+15.2554, 442609

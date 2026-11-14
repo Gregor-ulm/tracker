@@ -2,3 +2,4 @@ Titel: Windows Is Going to Start Asking For Your Age | Kanal: The Infographics S
 Zeit_in_h, Aufrufe
 0.0000, 155
 8.0649, 130970
+15.8498, 209562

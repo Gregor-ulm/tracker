@@ -2,3 +2,4 @@ Titel: Taylor Swift - I Knew It, I Knew You x Our Song (Live From The 60th CMA A
 Zeit_in_h, Aufrufe
 0.0000, 11517
 8.8433, 1389732
+14.8225, 2382281
